@@ -14,6 +14,7 @@ module Travis
   module Addons
     module Irc
       class Client
+        include Logging
         attr_accessor :channel, :socket, :ping_thread, :numeric_received, :msg_leader
 
         def self.wrap_ssl(socket)
