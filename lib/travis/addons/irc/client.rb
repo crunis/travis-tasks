@@ -14,7 +14,7 @@ module Travis
   module Addons
     module Irc
       class Client
-        attr_accessor :channel, :socket, :ping_thread, :numeric_received, :connection_info
+        attr_accessor :channel, :socket, :ping_thread, :numeric_received, :msg_leader
 
         def self.wrap_ssl(socket)
           ssl_context = OpenSSL::SSL::SSLContext.new
@@ -26,12 +26,15 @@ module Travis
         end
 
         def initialize(server, nick, options = {})
-          @connection_info = "host=#{server} port=#{options[:port] || 6667} nick=#{nick} protocol=#{options[:ssl] ? 'ircs' : 'irc'}"
           @socket = TCPSocket.open(server, options[:port] || 6667)
           @socket = self.class.wrap_ssl(@socket) if options[:ssl]
           @ping_thread = start_ping_thread
 
-          info("task=irc message=connection_init #{connection_info}")
+          repository = options[:repository]
+          connection_info = "host=#{server} port=#{options[:port] || 6667} nick=#{nick} protocol=#{options[:ssl] ? 'ircs' : 'irc'}"
+          @msg_leader = "task=irc repo=#{repository} build_id=#{options[:build_id]} #{connection_info}"
+
+          info("#{msg_leader} message=connection_init")
 
           socket.puts "PASS #{options[:password]}\r" if options[:password]
           socket.puts "NICK #{nick}\r"
@@ -47,7 +50,7 @@ module Travis
             end
           end
         rescue Timeout::Error => e
-          warn("task=irc message=conntection_timeout #{connection_info}")
+          warn("#{msg_leader} message=conntection_timeout")
         end
 
         def join(channel, key = nil)
@@ -71,7 +74,7 @@ module Travis
           socket.puts "QUIT\r"
           until socket.eof? do
             res = socket.gets
-            msg = "task=irc message=#{res}"
+            msg = "#{msg_leader} message=#{res}"
             if res.split[1] =~ /[45]\d\d/
               error msg
             else

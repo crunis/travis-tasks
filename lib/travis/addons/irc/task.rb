@@ -88,7 +88,9 @@ module Travis
               :port => port,
               :ssl => (ssl == :ssl),
               :password => try_config(:password),
-              :nickserv_password => try_config(:nickserv_password)
+              :nickserv_password => try_config(:nickserv_password),
+              :repository => repository[:slug],
+              :build_id => build[:id]
             }
           end
 
