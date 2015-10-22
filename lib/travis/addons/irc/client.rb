@@ -31,7 +31,7 @@ module Travis
           @socket = self.class.wrap_ssl(@socket) if options[:ssl]
           @ping_thread = start_ping_thread
 
-          Travis.logger.info("task=irc message=connection_init #{connection_info}")
+          info("task=irc message=connection_init #{connection_info}")
 
           socket.puts "PASS #{options[:password]}\r" if options[:password]
           socket.puts "NICK #{nick}\r"
@@ -47,7 +47,7 @@ module Travis
             end
           end
         rescue Timeout::Error => e
-          Travis.logger.warn("task=irc message=conntection_timeout #{connection_info}")
+          warn("task=irc message=conntection_timeout #{connection_info}")
         end
 
         def join(channel, key = nil)
@@ -71,8 +71,12 @@ module Travis
           socket.puts "QUIT\r"
           until socket.eof? do
             res = socket.gets
-            log_level = res.split[1] =~ /[45]\d\d/ ? Logger::ERROR : Logger::DEBUG
-            Travis.logger.log(log_level, "task=irc message=#{res}")
+            msg = "task=irc message=#{res}"
+            if res.split[1] =~ /[45]\d\d/
+              error msg
+            else
+              debug msg
+            end
           end
           socket.close
           ping_thread.exit
