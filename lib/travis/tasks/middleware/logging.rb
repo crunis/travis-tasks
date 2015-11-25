@@ -8,6 +8,7 @@ module Travis
           end
         ensure
           uuid, _, _, payload, params = *message['args']
+          Travis.logger.info(message.inspect)
           data = Hash.new.tap do |data|
             data['type'] = queue
             if payload['build']
